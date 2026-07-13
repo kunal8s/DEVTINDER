@@ -1,79 +1,45 @@
 const express = require("express");
+const morgan = require("morgan");
+const User = require("./model/user.js")
 const app = express(); 
+const connectDB = require("./config/database.js");
 
 const PORT = 3000; 
+
+app.use(express.json());
+
+app.use(morgan("dev")); 
 
 app.get("/",(req,res)=>{
     res.end("HELLOOOOOOOOOO");
 })
 
+app.post("/signup",async (req,res)=>{
+    const user = new User({
+        name:"Kunal sharma",
+        emailId:"Kunalsharmakunu09@gmail.com",
+        password:"pappuCAN09@",
+        age:22
+    })
 
-// middleware age and country check
-const age_country_check = (req,res,next)=>{
-    const {age,country} = req.params;
-    if(age>=21 && country=="India"){
-        next();
-    }
-    else{
-        res.send({msg:"Unauthorized acess...."})
-    }
-}
+    await user.save();
 
-// controller 
-const goon = (req,res)=>{
-    res.send("WELCOME TO THE GORGE  !!!!!!!!11")
-};
-
-app.get("/login/:age/:country",age_country_check,goon);
-
-const rh3 = (req,res)=>{
-    console.log("external rote 3///")
-}
-
-app.get("/check",(req,res,next)=>{
-    console.log("HELLO FROM SERVER REQUEST 2");
-    // res.send("Response 2....")
-    next();
-},(req,res,next)=>{
-    console.log("HELLO FROM SERVER REQUEST 1");
-    res.send("Response 1...."),
-    next();
-},rh3)
-
-app.get("/test/:name/:age",(req,res)=>{
-    const {name,age} = req.params;
-    console.log(name);
-    console.log(age);
-    res.send({firstname:name,age:age});
-}) 
-
-
-
-app.get("/checker", (req, res) => {
-  try {
-    // 1. Trigger your test error here
-    throw new Error("TEST_ERROR: hellllooooalalall"); 
-  } catch (error) {
-    // 2. This will safely log to your terminal
-    console.log("Caught test error:", error.message); 
-    
-    // 3. This sends the error back to your browser/Postman so you see it works
-    res.status(500).json({ 
-      success: false, 
-      message: error.message 
-    }); 
-  }
-});
-
-app.use("/ck",(err,req,res,next)=>{
-    if(err){
-        res.status(500).send("hj")
-    }
+    res.status(200).send({msg:"User added sucessfully...!!"});
 })
 
+connectDB()
+    .then(() => {
+        console.log("Database connection established... 🔌");
+        
+        // 2. Start the Express service only after the DB is ready
+        app.listen(PORT, () => {
+            console.log(`Backend service is running fine on port ${PORT}. ✅🛩️`);
+        });
+    })
+    .catch((err) => {
+        console.error("Database connection failed! ❌", err.message);
+        process.exit(1); // Stop the application if the DB cannot connect
+    });
 
-app.listen(PORT,()=>{
-    console.log("Backend service is running fine. ✅🛩️")
-}) 
 
 
