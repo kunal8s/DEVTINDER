@@ -5,6 +5,7 @@ const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const morgan = require("morgan");
 const User = require("./model/user.js")
+const {userAuth} = require("./middlewares/auth.js")
 
 
 
@@ -107,7 +108,8 @@ app.post("/login", async (req, res) => {
         }
 
         // 3. Password check
-        const isPasswordMatch = await bcrypt.compare(Password, users.password);
+        // const isPasswordMatch = await bcrypt.compare(Password, users.password);
+        const isPasswordMatch = await users.validatePassword(Password);
 
         if (!isPasswordMatch) {
             return res.status(401).json({ msg: "Invalid email or password" });
@@ -128,7 +130,7 @@ app.post("/login", async (req, res) => {
             };
 
             // 4. Generate (Sign) the JWT
-            const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '2h' })
+            const token = await users.getJWT();
 
 
             // here we are wrpping up the token into the cookies to send back
@@ -161,6 +163,33 @@ app.post("/login", async (req, res) => {
         res.status(500).json({ msg: "Internal server error" });
     }
 });
+
+
+app.get("/user",userAuth,async (req,res )=>{
+    const cookies = req.cookies;
+
+    const {auth_token} = cookies;
+    if(!auth_token){
+        return res.redirect("/login");
+        
+    }
+
+    const isTokenValid = jwt.verify(auth_token,JWT_SECRET)
+
+    console.log(isTokenValid);
+    const {userId} = isTokenValid;
+
+    console.log("Logged in user is : "+userId);
+    
+
+    const users = await User.findOne({ _id: userId });
+
+    console.log(users.name);
+
+
+    // console.log(cookie);
+    res.send("reading........")
+})
 
 
 app.get("/profile", async (req,res)=>{
