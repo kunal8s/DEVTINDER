@@ -1,10 +1,17 @@
 const express = require("express");
 const {z} = require("zod");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 const bcrypt = require("bcrypt");
 const morgan = require("morgan");
 const User = require("./model/user.js")
+
+
+
 const app = express(); 
 const connectDB = require("./config/database.js");
+
+const JWT_SECRET = "pappuCAN09@@"
 
 const PORT = 3000; 
 
@@ -13,6 +20,8 @@ app.use(express.json()); // for reading the json data
 app.use(express.urlencoded({extended:true}));
 
 app.use(morgan("dev")); 
+
+app.use(cookieParser());
 
 const signupSchema = z.object({
     username:z.string().min(3,"Username must be atleast 3 charecter long").max(20),
@@ -112,9 +121,28 @@ app.post("/login", async (req, res) => {
             age: users.age
         };
 
-        res.json({
+        if(isPasswordMatch){
+            // now we generate the JWT token for the user 
+            const payload = {
+                userId: userinfo.id // This is safe and all your server needs to identify them later
+            };
+
+            // 4. Generate (Sign) the JWT
+            const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '2h' })
+
+
+            // here we are wrpping up the token into the cookies to send back
+            res.cookie('auth_token', token, {
+                httpOnly: true,       // Prevents XSS attacks (Cross-Site Scripting via frontend JS)
+                secure: false,        // Set to TRUE in production when using HTTPS
+                sameSite: 'strict'    // Prevents CSRF attacks (Cross-Site Request Forgery)
+            });
+
+
+            res.json({
             USER: userinfo
         });
+        }
 
     } catch (error) {
         // Handle Zod validation errors gracefully without crashing the server
@@ -134,6 +162,36 @@ app.post("/login", async (req, res) => {
     }
 });
 
+
+app.get("/profile", async (req,res)=>{
+    try{
+    const cookies = req.cookies;
+
+    const {auth_token} = cookies;
+    if(!auth_token){
+        return res.redirect("/login");
+        
+    }
+
+    const isTokenValid = jwt.verify(auth_token,JWT_SECRET)
+
+    console.log(isTokenValid);
+    const {userId} = isTokenValid;
+
+    console.log("Logged in user is : "+userId);
+    
+
+    const users = await User.findOne({ _id: userId });
+
+    console.log(users.name);
+
+
+    // console.log(cookie);
+    res.send("reading........")
+    }catch(err){
+
+    }
+})
 
 connectDB()
     .then(() => {
@@ -157,3 +215,5 @@ connectDB()
 
 
     // signup , login , zod , bcrypt 
+
+    
