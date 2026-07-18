@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const User = require("../model/user"); 
+const User = require("../model/user");
 
 const userAuth = async (req, res, next) => {
     try {
@@ -8,36 +8,28 @@ const userAuth = async (req, res, next) => {
             throw new Error("Token is missing!");
         }
 
-        // 1. Verify the signature matches
-        const decodedObj = await jwt.verify(auth_token, "pappuCAN09@@");
+        // REMOVED 'await' - jwt.verify is synchronous
+        const decodedObj = jwt.verify(auth_token, "pappuCAN09@@");
 
-        // 2. Safely extract the userId from the payload
-        const { userId } = decodedObj;
+        const { _id } = decodedObj;
+        console.log("Looking up user with ID:", _id);
 
-        // Debug checkpoint: verify the ID is actually printing correctly to your console
-        console.log("Looking up user with ID extracted from JWT payload:", userId);
-
-        if (!userId) {
+        if (!_id) {
             throw new Error("Invalid token payload configuration");
         }
 
-        // 3. Query the database using mongoose findById helper
-        const user = await User.findById(userId);
-        
+        const user = await User.findById(_id);
         if (!user) {
-            throw new Error("User structure matched but ID does not exist in collection");
+            throw new Error("User does not exist in collection");
         }
 
-        // Attach user to req object for clean route consumption
-        req.user = user; 
-        
-        next();
+        // Attach the found user directly to the request object
+        req.user = user;
+
+        next(); // Safely move to the route handler
     } catch (err) {
         res.status(401).send("ERROR: " + err.message);
     }
 };
 
-module.exports = {
-    userAuth
-};
- 
+module.exports = { userAuth };
