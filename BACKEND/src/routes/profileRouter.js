@@ -6,7 +6,6 @@ const profileRouter = express.Router();
 
 // ─── GET /user ───────────────────────────────────────────────
 
-// ─── GET /profile ────────────────────────────────────────────
 
 
 // PROTECTED ROUTE: /user
@@ -21,6 +20,8 @@ profileRouter.get("/user", userAuth, async (req, res) => {
         res.status(500).send("Error reading user data: " + err.message);
     }
 });
+
+// ─── GET /profile ────────────────────────────────────────────
 
 // PROTECTED ROUTE: /profile
 profileRouter.get("/profile", userAuth, async (req, res) => {
