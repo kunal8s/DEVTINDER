@@ -16,6 +16,34 @@ requestRouter.post("/request/send/:status/:userid",userAuth,async (req, res)=>{
             return res.status(400).json({message:"Invalid status type: "+status});
         }
 
+        // Neglect if a person try to send connection request to itself , 
+        // we can write logi here but we can do schema logic and schema pre also 
+
+        // PRE is a function in a mongoose schema which pre hook it sis kind of like middleware (study in model file)
+
+        // if(fromUserId===toUserId){
+
+        // }
+
+        // check for not existing in my db the toUserId
+        const existingToUserId = await User.findById(toUserId);
+        if(!existingToUserId){
+            return res.status(400).json({message:"User Not Found"});
+        }
+        
+
+        // check if there is any existing connection request or not 
+        const existingConnectionRequest = await ConnectionRequest.findOne({
+            $or:[{fromUserId, toUserId},{fromUserId:toUserId, toUserId:fromUserId}]
+        })
+
+
+
+        if(existingConnectionRequest){
+            res.status(400).send({message:"Connection Request Already Exists !!"})
+        }
+
+
         const connectionRequest = new ConnectionRequest({
             fromUserId,
             toUserId,
@@ -25,7 +53,7 @@ requestRouter.post("/request/send/:status/:userid",userAuth,async (req, res)=>{
         const data = await connectionRequest.save();
 
         res.json({
-            message:"Connection request sent sucessfully.",
+            message:req.user.name+" is "+status+" in "+toUserId.name,
             data
         });
 
