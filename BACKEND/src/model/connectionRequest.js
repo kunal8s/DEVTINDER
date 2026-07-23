@@ -5,11 +5,13 @@ const {Schema} = mongoose;
 const connectionRequestSchema = new Schema({
     fromUserId:{
         type:mongoose.Schema.Types.ObjectId,
-        required:true
+        required:true,
+        ref:"User" // it is like a join in table in mongo DB it is reference to the user collection and now we populate this
     },
     toUserId:{
         type:mongoose.Schema.Types.ObjectId,
-        required:true
+        required:true,
+        ref:"User"
     },
     status:{
         type:String,

@@ -53,12 +53,52 @@ requestRouter.post("/request/send/:status/:userid",userAuth,async (req, res)=>{
         const data = await connectionRequest.save();
 
         res.json({
-            message:req.user.name+" is "+status+" in "+toUserId.name,
-            data
-        });
+    message: req.user.name + " is " + status + " in " + existingToUserId.name, // ✅ FIXED
+    data
+});
+
 
     }catch(err){
         res.status(400).send("ERROR: "+err.message);
+    }
+})
+
+requestRouter.post("/request/review/:status/:requestId", userAuth, async (req,res)=>{
+    try{
+        // logged in user is my req.user done by userauth 
+        const loggedInUser = req.user;
+        
+        const {status, requestId} = req.params;
+        
+        
+        const allowedStatus = ["accepted","rejected"];
+        if(!allowedStatus.includes(status)){
+            return res.status(400).json({message:"Invalid status type: "+status});
+        }
+        
+        const connectionRequest = await ConnectionRequest.findOne({
+            _id: requestId,
+            // if a -> b sent to b then the cureent logged in user is reciever is touserid logged in person 
+            toUserId : loggedInUser._id,
+            status:"interested"
+        })
+
+        if(!connectionRequest){
+            return res.status(404).json({message:"Connection request not found..!!"})
+        }
+
+        connectionRequest.status = status;
+
+        const data = await connectionRequest.save();
+
+        res.json({message:"Connection request "+status, data});
+
+
+        //logged in id should be valid 
+
+
+    }catch(error){
+
     }
 })
 
