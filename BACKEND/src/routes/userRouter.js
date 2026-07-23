@@ -64,9 +64,13 @@ userRouter.get("/feed",userAuth, async (req,res)=>{
         // 4. Ignored or rejected 
 
         const loggedInUser = req.user;
+        
+        // NOW WE DIDNOT WANT THAT OUR MILLIONS OF DATA BOMBARD AT SAME TIME IN FEED SO WE USED THE PAGONATION DATA COMES IN CHUNK BY CHUNK 
+        // .SKIP() & .LIMIT()
 
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        let limit = parseInt(req.query.limit) || 10;
+        limit = limit > 50 ? 50 : limit; 
 
         const skip = (page-1)*limit;
 
@@ -92,9 +96,9 @@ userRouter.get("/feed",userAuth, async (req,res)=>{
                 {_id: {$nin: Array.from(hideUsersFromFeed)}},
                 {_id: {$ne:loggedInUser._id}} // for self  
             ]
-        }).select(USER_SAFE_DATA).skip().limit(limit);
+        }).select(USER_SAFE_DATA).skip(skip).limit(limit);
 
-        res.send(users);
+        res.send({data: users});
 
 
     }catch(err){
@@ -102,7 +106,5 @@ userRouter.get("/feed",userAuth, async (req,res)=>{
     }
 })
 
-// NOW WE DIDNOT WANT THAT OUR MILLIONS OF DATA BOMBARD AT SAME TIME IN FEED SO WE USED THE PAGONATION DATA COMES IN CHUNK BY CHUNK 
-// .SKIP() & .LIMIT()
 
 module.exports = { userRouter };
